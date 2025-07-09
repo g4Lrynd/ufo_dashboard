@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import data from "./data.json";
 
 function App() {
   const url =
@@ -24,6 +25,46 @@ function App() {
     sightings: number;
   }
 
+  interface UfoSightingWeek {
+    [label: string]: UfoSighting;
+  }
+
+  const parseDate = (date: string): Date => {
+    const [day, month, year] = date.split("/").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const sortDataByWeeks = (data: UfoSighting[]) => {
+    let weeks: UfoSightingWeek[] = [];
+    const startDate = parseDate(data[0].date);
+    const endDate = parseDate(data[data.length - 1].date);
+    let currentDate = startDate;
+
+    // This gets the day and removes however days is needed to get to Monday
+    currentDate.setDate(currentDate.getDate() - currentDate.getDay() + 1);
+    // Do the same for the end date but to Friday instead
+    endDate.setDate(endDate.getDate() + endDate.getDay() + 1);
+
+    while (currentDate <= endDate) {
+      if (1 === currentDate.getDay()) {
+        const monday = currentDate;
+        let sunday = new Date(monday);
+        sunday.setDate(sunday.getDate() + 6);
+
+        let label =
+          monday.toLocaleDateString("en-GB") +
+          " - " +
+          sunday.toLocaleDateString("en-GB");
+
+        weeks[label] = ["monday", "tuesday"];
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    console.log(weeks);
+  };
+
   const fetchUfos = async (): Promise<void> => {
     setLoading(true);
     try {
@@ -36,6 +77,7 @@ function App() {
 
       const json: UfoSighting[] = await response.json();
       setUfos(json);
+      sortDataByWeeks(json);
       setError(null);
     } catch (error) {
       setError((error as Error).message);
@@ -45,7 +87,9 @@ function App() {
   };
 
   useEffect(() => {
-    fetchUfos();
+    // fetchUfos();
+    setUfos(data);
+    sortDataByWeeks(data);
   }, []);
 
   if (loading) {
