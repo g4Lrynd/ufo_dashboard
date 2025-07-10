@@ -11,22 +11,24 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import data from "./data.json";
 
 function App() {
   const url =
     "https://my-json-server.typicode.com/Louis-Procode/ufo-Sightings/ufoSightings";
   const [ufos, setUfos] = useState<UfoSighting[]>([]);
+  const [sortedUfos, setSortedUfos] = useState<UfoWeek[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
 
   interface UfoSighting {
     date: string;
     sightings: number;
   }
 
-  interface UfoSightingWeek {
-    [label: string]: UfoSighting;
+  interface UfoWeek {
+    range: string;
+    days: UfoSighting[];
   }
 
   const parseDate = (date: string): Date => {
@@ -35,7 +37,7 @@ function App() {
   };
 
   const sortDataByWeeks = (data: UfoSighting[]) => {
-    let weeks: UfoSightingWeek[] = [];
+    const weeks: UfoWeek[] = [];
     const startDate = parseDate(data[0].date);
     const endDate = parseDate(data[data.length - 1].date);
     let currentDate = startDate;
@@ -47,25 +49,48 @@ function App() {
 
     while (currentDate <= endDate) {
       if (1 === currentDate.getDay()) {
+        const weekDays: UfoSighting[] = [];
         const monday = currentDate;
+        const mondayString = monday.toLocaleDateString("en-GB");
+
         let sunday = new Date(monday);
         sunday.setDate(sunday.getDate() + 6);
+        const sundayString = sunday.toLocaleDateString("en-GB");
 
-        let label =
-          monday.toLocaleDateString("en-GB") +
-          " - " +
-          sunday.toLocaleDateString("en-GB");
+        let label = `${mondayString} - ${sundayString}`;
 
-        weeks[label] = ["monday", "tuesday"];
+        // Loops through days of the week and checks if ufo data has corrospoding day of sightings
+        for (let i = 0; i < 6; i++) {
+          const weekDay = new Date(currentDate.getTime());
+          weekDay.setDate(monday.getDate() + i);
+          const weekDayString = weekDay.toLocaleDateString("en-GB", {
+            weekday: "long",
+          });
+
+          const found = data.find(
+            (element) => parseDate(element.date).getTime() === weekDay.getTime()
+          );
+
+          weekDays.push({
+            date: weekDayString,
+            sightings: found ? found?.sightings : 0,
+          });
+        }
+
+        weeks.push({
+          range: label,
+          days: weekDays,
+        });
       }
 
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
     console.log(weeks);
+    setSortedUfos(weeks);
   };
 
-  const fetchUfos = async (): Promise<void> => {
+  const fetchUfos = async () => {
     setLoading(true);
     try {
       const response = await fetch(url);
@@ -76,7 +101,6 @@ function App() {
       }
 
       const json: UfoSighting[] = await response.json();
-      setUfos(json);
       sortDataByWeeks(json);
       setError(null);
     } catch (error) {
@@ -87,9 +111,7 @@ function App() {
   };
 
   useEffect(() => {
-    // fetchUfos();
-    setUfos(data);
-    sortDataByWeeks(data);
+    fetchUfos();
   }, []);
 
   if (loading) {
@@ -102,31 +124,59 @@ function App() {
 
   return (
     <div className="App">
-      {ufos.length > 0 && (
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart
-            width={500}
-            height={300}
-            data={ufos}
-            margin={{
-              top: 5,
-              right: 30,
-              left: 20,
-              bottom: 5,
+      {sortedUfos.length > 0 && (
+        <>
+          <h1>Weekly UFO Sightings Dashboard</h1>
+          <ResponsiveContainer width="60%" height={400}>
+            <BarChart
+              width={500}
+              height={300}
+              data={sortedUfos[selectedWeekIndex].days}
+              margin={{
+                top: 5,
+                right: 30,
+                left: 20,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar
+                dataKey="sightings"
+                fill="#8884d8"
+                activeBar={<Rectangle fill="#514aa5" />}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+
+          <div
+            style={{
+              marginTop: "1rem",
+              display: "flex",
+              justifyContent: "center",
+              gap: "1rem",
             }}
           >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar
-              dataKey="sightings"
-              fill="#8884d8"
-              activeBar={<Rectangle fill="#514aa5" />}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+            <div className="week-nav-buttons">
+              <button
+                onClick={() => setSelectedWeekIndex((prev) => prev - 1)}
+                disabled={selectedWeekIndex === 0}
+              >
+                Previous Week
+              </button>
+              <p>{sortedUfos[selectedWeekIndex].range}</p>
+              <button
+                onClick={() => setSelectedWeekIndex((prev) => prev + 1)}
+                disabled={selectedWeekIndex === sortedUfos.length - 1}
+              >
+                Next Week
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
