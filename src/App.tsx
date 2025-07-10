@@ -42,7 +42,7 @@ function App() {
         let label = `${mondayString} - ${sundayString}`;
 
         // Loops through days of the week and checks if ufo data has corrospoding day of sightings
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i <= 6; i++) {
           const weekDay = new Date(currentDate.getTime());
           weekDay.setDate(monday.getDate() + i);
           const weekDayString = weekDay.toLocaleDateString("en-GB", {
