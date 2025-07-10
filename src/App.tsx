@@ -1,16 +1,8 @@
 import "./App.css";
 import { useEffect, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  Rectangle,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import Button from "./components/Button";
+import UfoBarGraph from "./components/UfoBarGraph";
+import { UfoSighting, UfoWeek } from "./types";
 
 function App() {
   const url =
@@ -20,16 +12,6 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
-
-  interface UfoSighting {
-    date: string;
-    sightings: number;
-  }
-
-  interface UfoWeek {
-    range: string;
-    days: UfoSighting[];
-  }
 
   const parseDate = (date: string): Date => {
     const [day, month, year] = date.split("/").map(Number);
@@ -124,57 +106,26 @@ function App() {
 
   return (
     <div className="App">
-      {sortedUfos.length > 0 && (
+      {sortedUfos && (
         <>
           <h1>Weekly UFO Sightings Dashboard</h1>
-          <ResponsiveContainer width="60%" height={400}>
-            <BarChart
-              width={500}
-              height={300}
-              data={sortedUfos[selectedWeekIndex].days}
-              margin={{
-                top: 5,
-                right: 30,
-                left: 20,
-                bottom: 5,
-              }}
+          <UfoBarGraph data={sortedUfos[selectedWeekIndex].days} />
+          <div className="navigation">
+            <Button
+              onClick={() => setSelectedWeekIndex((prev) => prev - 1)}
+              disabled={selectedWeekIndex === 0}
             >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar
-                dataKey="sightings"
-                fill="#8884d8"
-                activeBar={<Rectangle fill="#514aa5" />}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+              Previous Week
+            </Button>
 
-          <div
-            style={{
-              marginTop: "1rem",
-              display: "flex",
-              justifyContent: "center",
-              gap: "1rem",
-            }}
-          >
-            <div className="week-nav-buttons">
-              <button
-                onClick={() => setSelectedWeekIndex((prev) => prev - 1)}
-                disabled={selectedWeekIndex === 0}
-              >
-                Previous Week
-              </button>
-              <p>{sortedUfos[selectedWeekIndex].range}</p>
-              <button
-                onClick={() => setSelectedWeekIndex((prev) => prev + 1)}
-                disabled={selectedWeekIndex === sortedUfos.length - 1}
-              >
-                Next Week
-              </button>
-            </div>
+            <p>{sortedUfos[selectedWeekIndex].range}</p>
+
+            <Button
+              onClick={() => setSelectedWeekIndex((prev) => prev + 1)}
+              disabled={selectedWeekIndex === sortedUfos.length - 1}
+            >
+              Next Week
+            </Button>
           </div>
         </>
       )}
