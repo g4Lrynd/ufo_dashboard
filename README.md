@@ -1,4 +1,4 @@
-# UFO Sightings Dashboard
+# UFO Sightings Dashboard (test)
 
 This is a UFO sightings dashboard that fetches data of UFOS and displays them by week.
 
